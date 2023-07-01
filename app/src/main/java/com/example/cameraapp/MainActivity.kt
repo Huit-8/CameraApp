@@ -22,6 +22,7 @@ import com.example.cameraapp.databinding.ActivityMainBinding
 import java.text.SimpleDateFormat
 import java.util.*
 
+
 class MainActivity : AppCompatActivity() {
 
     companion object {
