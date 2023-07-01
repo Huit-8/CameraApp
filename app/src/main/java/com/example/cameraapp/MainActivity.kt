@@ -1,6 +1,9 @@
 package com.example.cameraapp
 
 import android.content.ContentValues
+import android.content.Context
+import android.content.pm.PackageManager
+import android.graphics.Insets.add
 import android.media.Image
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
@@ -13,6 +16,7 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.cameraapp.databinding.ActivityMainBinding
 import java.text.SimpleDateFormat
@@ -22,6 +26,17 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
+
+        private const val REQUEST_CODE_PERMISSIONS = 10
+        private val REQUIRED_PERMISSIONS =
+            mutableListOf(
+                android.Manifest.permission.CAMERA,
+                android.Manifest.permission.RECORD_AUDIO
+            ).apply {
+                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+                    add(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                }
+            }.toTypedArray()
     }
 
     private lateinit var binding: ActivityMainBinding
@@ -33,9 +48,15 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        startCamera()
+        if (allPermissionsGranted()){
+            startCamera()
+        }else{
+            ActivityCompat.requestPermissions(
+                this,REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS
+            )
+        }
 
-        binding.imageCaptureButton.setOnClickListener{
+        binding.imageCaptureButton.setOnClickListener {
             takePhoto()
         }
     }
@@ -104,6 +125,27 @@ class MainActivity : AppCompatActivity() {
             }
         )
 
+    }
+
+    private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
+        ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_CODE_PERMISSIONS) {
+            if (allPermissionsGranted()) {
+                startCamera()
+            } else {
+                Toast.makeText(this, "パーミッションがありません", Toast.LENGTH_SHORT)
+                    .show()
+                finish()
+            }
+        }
 
     }
 }
